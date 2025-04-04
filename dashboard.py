@@ -4,22 +4,32 @@ import plotly.graph_objects as go
 import dash
 from dash import dcc, html, Input, Output
 
-# Загружаем данные из CSV
-df = pd.read_csv("data/financial_data.csv")
+# Ссылки на Google Sheets для экспорта в CSV
+file_id = "1ATITvw66m4Tz4TMAq5PRHYcBytFe_IbuT1p98z77L2w"
+sheets = {
+    "ФО 2025 ПЛАН": f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid=0",
+    "C&F": f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid=2083183732",
+    "Баланс": f"https://docs.google.com/spreadsheets/d/{file_id}/export?format=csv&gid=1491596727"
+}
+
+# Загружаем данные
+df_plan = pd.read_csv(sheets["ФО 2025 ПЛАН"])
+df_cf = pd.read_csv(sheets["C&F"])
+df_balance = pd.read_csv(sheets["Баланс"])
 
 # Список месяцев
 months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"]
 
 # Извлечение данных
-income_data = df.loc[df['Category'] == 'Доходы', months].values[0].astype(float)
-expenses_data = df.loc[df['Category'] == 'Расходы', months].values[0].astype(float)
-profit_data = df.loc[df['Category'] == 'Прибыль', months].values[0].astype(float)
-profitability_data = df.loc[df['Category'] == 'Рентабельность', months].values[0].astype(float)
-cash_start = df.loc[df['Category'] == 'Остаток ДС (начало)', months].values[0].astype(float)
-cash_end = df.loc[df['Category'] == 'Остаток ДС (конец)', months].values[0].astype(float)
-rnd_expenses = df.loc[df['Category'] == 'R&D', months].values[0].astype(float)
-sales_management_expenses = df.loc[df['Category'] == 'Продажи и управление', months].values[0].astype(float)
-other_expenses = expenses_data - rnd_expenses - sales_management_expenses
+income_data = df_plan.iloc[1, 1:13].astype(float)  # Доходы
+expenses_data = df_plan.iloc[29, 1:13].astype(float)  # Расходы
+profit_data = df_plan.iloc[30, 1:13].astype(float)  # Прибыль до распределения
+profitability_data = df_plan.iloc[32, 1:13].astype(float)  # Рентабельность
+cash_start = df_cf.iloc[0, 1:13].astype(float)  # Остаток ДС на начало месяца
+cash_end = df_cf.iloc[1, 1:13].astype(float)  # Остаток ДС на конец месяца
+rnd_expenses = df_plan.iloc[12, 1:13].astype(float)  # R&D
+sales_management_expenses = df_plan.iloc[16, 1:13].astype(float)  # Продажи и управление
+other_expenses = expenses_data - rnd_expenses - sales_management_expenses  # Прочие расходы
 
 # Создаем Dash-приложение
 app = dash.Dash(__name__, external_stylesheets=["https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap", "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"])
@@ -36,19 +46,19 @@ app.layout = html.Div([
     html.Div([
         html.Div([
             html.I(className="fas fa-money-bill-wave", style={'fontSize': '24px', 'color': '#2E7D32', 'marginRight': '10px'}),
-            html.Span(f"Общий доход: {income_data.sum():,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
+            html.Span(f"Общий доход: {df_plan.iloc[1, 13]:,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
         ], style={
             'background': 'linear-gradient(90deg, #C8E6C9, #FFFFFF)', 'borderRadius': '10px', 'padding': '15px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.1)', 'width': '30%'
         }),
         html.Div([
             html.I(className="fas fa-shopping-cart", style={'fontSize': '24px', 'color': '#D32F2F', 'marginRight': '10px'}),
-            html.Span(f"Общие расходы: {expenses_data.sum():,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
+            html.Span(f"Общие расходы: {df_plan.iloc[29, 13]:,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
         ], style={
             'background': 'linear-gradient(90deg, #FFCDD2, #FFFFFF)', 'borderRadius': '10px', 'padding': '15px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.1)', 'width': '30%'
         }),
         html.Div([
             html.I(className="fas fa-chart-line", style={'fontSize': '24px', 'color': '#1976D2', 'marginRight': '10px'}),
-            html.Span(f"Прибыль: {profit_data.sum():,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
+            html.Span(f"Прибыль: {df_plan.iloc[30, 13]:,.2f} грн", style={'fontSize': '18px', 'fontWeight': 'bold'})
         ], style={
             'background': 'linear-gradient(90deg, #BBDEFB, #FFFFFF)', 'borderRadius': '10px', 'padding': '15px', 'boxShadow': '0 4px 8px rgba(0,0,0,0.1)', 'width': '30%'
         }),
